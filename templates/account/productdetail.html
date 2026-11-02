@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="col-sm-9 padding-right">
+    <div class="product-details"><!--product-details-->
+      <div class="col-sm-5">
+            <div class="view-product" style="position: relative; text-align: center;">
+                <!-- ẢNH LỚN -->
+                {% if product.first_image %}
+                    <img id="main-image" src="/media/products/{{ product.first_image }}" alt="{{ product.name }}" style="height: 380px; width: 100%; object-fit: contain; cursor: pointer;" onclick="openImageModal(this.src)" />
+                {% else %}
+                    <img id="main-image" src="{% static 'images/home/gallery1.jpg' %}" alt="{{ product.name }}" style="height: 380px; width: 100%; object-fit: contain; cursor: pointer;" onclick="openImageModal(this.src)" />
+                {% endif %}
+
+                <!-- NÚT ZOOM -->
+                <h3 onclick="openImageModal(document.getElementById('main-image').src)" style="cursor: pointer; background: #FE980F; padding: 5px 10px; font-size: 14px; position: absolute; bottom: 0; right: 0; color: #fff; margin: 0;">ZOOM</h3>
+            </div>
+
+            <!-- DANH SÁCH ẢNH CON -->
+            <div id="similar-product" style="margin-top: 15px; display: flex; justify-content: center; gap: 10px;">
+                {% for img in product.image_list %}
+                    <img src="/media/products/{{ img }}" style="width: 75px; height: 70px; object-fit: cover; cursor: pointer; border: 1px solid #ddd; border-radius: 4px;" onclick="document.getElementById('main-image').src=this.src;" />
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-sm-7">
+            <!-- Thêm position: relative để cố định nhãn Sale về góc phải -->
+            <div class="product-information" style="position: relative; padding-bottom: 20px;">
+                <!-- NHÃN SALE NẰM ĐÚNG GÓC TRÊN BÊN PHẢI Ô THÔNG TIN -->
+                {% if product.status == 1 %}
+                    <img src="{% static 'images/home/sale.png' %}" alt="Sale" style="position: absolute; top: 0; right: 0; left: auto; border: none;" />
+                {% elif product.status == 0 %}
+                    <img src="{% static 'images/home/new.png' %}" alt="New" style="position: absolute; top: 0; right: 0; left: auto; border: none;" />
+                {% endif %}
+
+                <h2>{{ product.name }}</h2>
+                <p>Web ID: {{ product.id }}</p>
+                <span>
+                    <span>US ${{ product.price }}</span>
+                    <label>Quantity:</label>
+                    <input type="number" id="detail-qty" value="1" min="1" style="width: 45px; height: 32px; text-align: center; border: 1px solid #ccc; font-weight: bold;" />
+                    <button type="button" class="btn btn-default" id="btn-add-detail" data-id="{{ product.id }}" style="background: #FE980F; color: #fff; border-radius: 0; height: 32px; border: none; font-weight: bold; padding: 0 15px;">
+                        <i class="fa fa-shopping-cart"></i> Add to cart
+                    </button>
+                </span>
+                <p><b>Availability:</b> In Stock</p>
+                <p><b>Condition:</b> {% if product.status == 1 %}Sale ({{ product.sale }}%){% else %}New{% endif %}</p>
+                <p><b>Brand:</b> {{ product.brand.name }}</p>
+                <p><b>Category:</b> {{ product.category.name }}</p>
+                {% if product.company %}
+                    <p><b>Company:</b> {{ product.company }}</p>
+                {% endif %}
+            </div><!--/product-information-->
+        </div>
+    </div><!--/product-details-->
+
+    <!-- Chi tiết mô tả -->
+    <div class="category-tab shop-details-tab">
+        <div class="col-sm-12">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#details" data-toggle="tab">Details</a></li>
+                {% if product.company %}<li><a href="#companyprofile" data-toggle="tab">Company Profile</a></li>{% endif %}
+            </ul>
+        </div>
+        <div class="tab-content">
+            <div class="tab-pane fade active in" id="details" style="padding: 20px;">
+                <p>{{ product.detail|linebreaks }}</p>
+            </div>
+            {% if product.company %}
+            <div class="tab-pane fade" id="companyprofile" style="padding: 20px;">
+                <p><b>Company:</b> {{ product.company }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<!-- MODAL POPUP PHÓNG TO ẢNH FULL SIZE -->
+<div id="imageFullModal" style="display: none; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); text-align: center;">
+    <span onclick="document.getElementById('imageFullModal').style.display='none'" style="position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer;">&times;</span>
+    <img id="fullSizeImg" style="margin: auto; display: block; max-width: 90%; max-height: 85%; margin-top: 50px; border: 3px solid #fff; border-radius: 6px; box-shadow: 0 0 20px rgba(255,255,255,0.4);" />
+</div>
+
+<script>
+    function openImageModal(imgSrc) {
+        document.getElementById('imageFullModal').style.display = 'block';
+        document.getElementById('fullSizeImg').src = imgSrc;
+    }
+
+    // Đóng khi click vào vùng đen
+    window.onclick = function(event) {
+        var modal = document.getElementById('imageFullModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+</script>
+<script>
+$(document).ready(function() {
+    $('#btn-add-detail').on('click', function() {
+        var pId = $(this).data('id');
+        var qty = $('#detail-qty').val();
+
+        $.ajax({
+            url: "{% url 'add_to_cart_ajax' %}",
+            type: "POST",
+            data: {
+                'product_id': pId,
+                'quantity': qty,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(res) {
+                if(res.status === 'success') {
+                    $('#cart-count').text(res.total_quantity);
+                    alert("Đã thêm " + qty + " sản phẩm vào giỏ hàng!");
+                }
+            }
+        });
+    });
+});
+</script>
+{% csrf_token %}
+
+<script src="{% static 'js/jquery.js' %}"></script>
+<script>
+$(document).ready(function() {
+    $('#btn-add-detail').off('click').on('click', function(e) {
+        e.preventDefault();
+
+        // 1. Lấy ID sản phẩm chính xác từ nút bấm (dùng closest hoặc trực tiếp selector ID)
+        var btn = $(this);
+        var productId = btn.attr('data-id') || btn.data('id');
+        
+        // 2. Lấy số lượng từ ô input #detail-qty
+        var qty = parseInt($('#detail-qty').val());
+        if (isNaN(qty) || qty < 1) {
+            qty = 1;
+        }
+
+        if (!productId) {
+            alert("Lỗi: Không tìm thấy mã sản phẩm.");
+            return;
+        }
+
+        // 3. Lấy CSRF token an toàn
+        var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+
+        // 4. Gửi AJAX lên backend
+        $.ajax({
+            url: "{% url 'add_to_cart_ajax' %}",
+            type: "POST",
+            data: {
+                'product_id': productId,
+                'quantity': qty, // Đảm bảo đúng tên biến 'quantity'
+                'csrfmiddlewaretoken': csrfToken
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Cập nhật số lượng trên icon Cart ở Header
+                    if (response.total_quantity !== undefined) {
+                        $('#cart-count').text(response.total_quantity);
+                    }
+                    alert("Đã thêm " + qty + " sản phẩm vào giỏ hàng thành công!");
+                } else {
+                    alert(response.message || "Không thể thêm sản phẩm!");
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Chi tiết lỗi:", xhr.responseText);
+                var msg = "Vui lòng thử lại!";
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                } else if (xhr.status === 403) {
+                    msg = "Lỗi xác thực CSRF Token (403). Hãy tải lại trang.";
+                } else if (xhr.status === 500) {
+                    msg = "Lỗi xử lý hệ thống (500). Vui lòng kiểm tra console terminal của Django.";
+                }
+                alert("Có lỗi xảy ra: " + msg);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

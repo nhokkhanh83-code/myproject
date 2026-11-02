@@ -1,0 +1,29 @@
+{% load static %}
+<div class="left-sidebar">
+    <h2>Account</h2>
+    <div class="panel-group category-products" id="accordian" style="border: 1px solid #F7F7F0; padding: 15px;">
+        
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a href="{% url 'account_update' %}" style="display: block;">
+                        <span class="badge pull-right"><i class="fa fa-plus"></i></span>
+                        ACCOUNT
+                    </a>
+                </h4>
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a href="{% url 'my_product' %}" style="display: block;">
+                        <span class="badge pull-right"><i class="fa fa-plus"></i></span>
+                        MY PRODUCT
+                    </a>
+                </h4>
+            </div>
+        </div>
+
+    </div>
+</div>

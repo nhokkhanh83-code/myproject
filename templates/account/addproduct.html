@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="col-sm-9">
+    <div class="blog-post-area">
+        <h2 class="title text-center" style="color: #FE980F;">Product</h2>
+        <div class="signup-form">
+            <h2>Create product!</h2>
+
+            <form id="productAjax" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Name -->
+                <input type="text" name="name" id="name" placeholder="Name" />
+                <p id="error-name" style="color: red; margin-top: -5px; margin-bottom: 8px; font-size: 13px;"></p>
+                
+                <!-- Price -->
+                <input type="number" step="0.01" name="price" id="price" placeholder="Price" />
+                <p id="error-price" style="color: red; margin-top: -5px; margin-bottom: 8px; font-size: 13px;"></p>
+                
+                <!-- Category -->
+                <select name="category" id="category" style="margin-bottom: 5px; height: 40px; padding-left: 10px; border: 1px solid #F0F0E9; background: #F0F0E9; width: 100%;">
+                    <option value="">Please choose category</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+                <p id="error-category" style="color: red; margin-top: 0; margin-bottom: 8px; font-size: 13px;"></p>
+
+                <!-- Brand -->
+                <select name="brand" id="brand" style="margin-bottom: 5px; height: 40px; padding-left: 10px; border: 1px solid #F0F0E9; background: #F0F0E9; width: 100%;">
+                    <option value="">Please choose brand</option>
+                    {% for br in brands %}
+                        <option value="{{ br.id }}">{{ br.name }}</option>
+                    {% endfor %}
+                </select>
+                <p id="error-brand" style="color: red; margin-top: 0; margin-bottom: 8px; font-size: 13px;"></p>
+
+                <!-- Status (0: New, 1: Sale) -->
+                <select id="status_select" name="status" style="margin-bottom: 10px; height: 40px; padding-left: 10px; border: 1px solid #F0F0E9; background: #F0F0E9; width: 100%;">
+                    <option value="0">New</option>
+                    <option value="1">Sale</option>
+                </select>
+
+                <!-- Ô nhập % Sale -->
+                <div id="sale_box" style="display: none; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; width: 200px;">
+                        <input type="number" min="0" max="100" name="sale_price" id="sale_price" value="0" placeholder="0" style="margin-bottom: 0; width: 100px; display: inline-block;" />
+                        <span style="margin-left: 10px; font-weight: bold; font-size: 16px;">%</span>
+                    </div>
+                </div>
+
+                <!-- Company profile -->
+                <input type="text" name="company" placeholder="Company profile" />
+
+                <!-- Upload File -->
+                <input type="file" name="images" id="images" multiple accept="image/*" style="margin-bottom: 5px;" />
+                <p id="error-images" style="color: red; margin-top: 0; margin-bottom: 8px; font-size: 13px;"></p>
+
+                <!-- Detail -->
+                <textarea name="detail" rows="6" placeholder="Detail" style="margin-bottom: 10px; width: 100%; padding: 10px; border: 1px solid #F0F0E9; background: #F0F0E9; resize: vertical;"></textarea>
+
+                <button type="submit" class="btn btn-default" style="background: #FE980F; color: white; margin-top: 10px; padding: 6px 25px;">Signup</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/jquery.js' %}"></script>
+<script>
+    // 1. Tự động bật/tắt ô nhập % Sale
+    $('#status_select').on('change', function () {
+        if ($(this).val() === '1') {
+            $('#sale_box').show();
+        } else {
+            $('#sale_box').hide();
+        }
+    });
+
+    // 2. Gửi dữ liệu form qua AJAX
+    $('#productAjax').on('submit', function (e) {
+        e.preventDefault();
+
+        // Xóa thông báo lỗi cũ
+        $('p[id^="error-"]').text('');
+
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: "{% url 'add_product' %}",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                if (response.status === 'success') {
+                    // Chuyển hướng về trang danh sách my-product khi thành công
+                    window.location.href = "{% url 'my_product' %}";
+                }
+            },
+            error: function (xhr) {
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    const errors = xhr.responseJSON.errors;
+                    if (errors.name) $('#error-name').text(errors.name);
+                    if (errors.price) $('#error-price').text(errors.price);
+                    if (errors.category) $('#error-category').text(errors.category);
+                    if (errors.brand) $('#error-brand').text(errors.brand);
+                    if (errors.images) $('#error-images').text(errors.images);
+                } else {
+                    alert('Đã xảy ra lỗi, vui lòng thử lại.');
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

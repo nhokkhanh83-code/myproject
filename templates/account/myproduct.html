@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="col-sm-9">
+    <!-- Bọc bảng bằng thẻ div có giới hạn chiều cao và thanh cuộn -->
+    <div class="table-responsive" style="max-height: 380px; overflow-y: auto; border: 1px solid #ddd; margin-bottom: 20px;">
+        <table class="table table-bordered text-center" style="margin-bottom: 0;">
+            <thead style="position: sticky; top: 0; z-index: 10;">
+                <tr style="background-color: #FE980F; color: white; font-weight: bold;">
+                    <th style="text-align: center; width: 10%; background-color: #FE980F;">Id</th>
+                    <th style="text-align: center; width: 30%; background-color: #FE980F;">Name</th>
+                    <th style="text-align: center; width: 25%; background-color: #FE980F;">Image</th>
+                    <th style="text-align: center; width: 20%; background-color: #FE980F;">Price</th>
+                    <th style="text-align: center; width: 15%; background-color: #FE980F;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if products %}
+                    {% for item in products %}
+                    <tr style="vertical-align: middle;">
+                        <td style="vertical-align: middle; color: #007bff;">{{ item.id }}</td>
+                        <td style="vertical-align: middle; color: #007bff; font-weight: 500;">{{ item.name }}</td>
+                        <td style="vertical-align: middle;">
+                            {% if item.first_image %}
+                                <img src="/media/products/{{ item.first_image }}" alt="{{ item.name }}" style="width: 65px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;">
+                            {% else %}
+                                <span class="text-muted">Không có ảnh</span>
+                            {% endif %}
+                        </td>
+                        <td style="vertical-align: middle; font-weight: bold;">${{ item.price }}</td>
+                        <td style="vertical-align: middle;">
+                            <!-- Nút Edit -->
+                            <a href="{% url 'edit_product' pk=item.id %}" style="color: #007bff; font-size: 16px; margin-right: 15px;" title="Edit">
+                                <i class="fa fa-pencil-square-o"></i>
+                            </a>
+                            <!-- Nút Delete: icon dấu x -->
+                            <a href="{% url 'delete_product' pk=item.id %}" 
+                            onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');" 
+                            style="color: #007bff; font-size: 16px;" 
+                            title="Delete">
+                                <i class="fa fa-times"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="padding: 30px; font-size: 16px; color: #888;">
+                            Không có mặt hàng nào
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Nút Add New ở góc dưới bên phải -->
+    <div class="pull-right" style="margin-bottom: 30px;">
+        <a href="{% url 'add_product' %}" class="btn btn-default" style="background: #FE980F; color: white; border-radius: 0; padding: 6px 20px; font-weight: bold;">
+            Add New
+        </a>
+    </div>
+</div>
+{% endblock %}

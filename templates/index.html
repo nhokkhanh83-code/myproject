@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section>
+    <div class="container">
+        <div class="row" style="display: flex;">
+
+
+            <!-- Cột phải: 9 cột -->
+            <div class="col-sm-9 padding-right">
+            <!-- Khu vực sản phẩm trang Shop -->
+                <div class="features_items">
+                    <h2 class="title text-center">Features Items</h2>
+
+                    <!-- Thêm display: flex và flex-wrap để các ô sản phẩm không bị rớt dòng lệch hàng -->
+                    <div class="row" style="display: flex; flex-wrap: wrap;">
+                        {% for p in latest_products %}
+                        <div class="col-sm-4" style="display: flex; flex-direction: column; margin-bottom: 30px;">
+                            <div class="product-image-wrapper" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+                                <div class="single-products" style="position: relative;">
+                                    <div class="productinfo text-center">
+                                        <div style="height: 220px; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fcfcfc;">
+                                            {% if p.image %}
+                                                <img src="/media/products/{{ p.image }}" alt="{{ p.name }}" style="max-height: 200px; max-width: 100%; object-fit: contain;" />
+                                            {% else %}
+                                                <img src="{% static 'images/home/gallery1.jpg' %}" alt="{{ p.name }}" style="max-height: 200px; max-width: 100%; object-fit: contain;" />
+                                            {% endif %}
+                                        </div>
+                                        <h2>${{ p.price }}</h2>
+                                        <p style="min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="{{ p.name }}">{{ p.name }}</p>
+                                        <a href="javascript:void(0);" class="btn btn-default add-to-cart add-to-cart-btn" data-id="{{ p.id }}">
+                                            <i class="fa fa-shopping-cart"></i>Add to cart
+                                        </a>
+                                    </div>
+                                    
+                                    <!-- Khung hover (product-overlay) -->
+                                    <div class="product-overlay">
+                                        <div class="overlay-content">
+                                            <h2>${{ p.price }}</h2>
+                                            <p>{{ p.name }}</p>
+                                            <a href="javascript:void(0);" class="btn btn-default add-to-cart add-to-cart-btn" data-id="{{ p.id }}">
+                                                <i class="fa fa-shopping-cart"></i>Add to cart
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    {% if p.status == 1 %}
+                                        <img src="{% static 'images/home/sale.png' %}" class="new" alt="Sale" />
+                                    {% elif p.status == 0 %}
+                                        <img src="{% static 'images/home/new.png' %}" class="new" alt="New" />
+                                    {% endif %}
+                                </div>
+                                <div class="choose">
+                                    <ul class="nav nav-pills nav-justified">
+                                        <li><a href="{% url 'product_detail' pk=p.id %}"><i class="fa fa-plus-square"></i>More</a></li>
+                                        <li><a href="#"><i class="fa fa-plus-square"></i>Add to compare</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                            <div class="col-sm-12 text-center" style="padding: 40px 0;">
+                                <p style="color: #888; font-size: 16px;">Chưa có sản phẩm nào được đăng.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                </div><!--features_items-->
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="{% static 'js/jquery.js' %}"></script>
+<script>
+$(document).ready(function() {
+    $('.add-to-cart-btn').on('click', function(e) {
+        e.preventDefault();
+        var productId = $(this).data('id');
+
+        $.ajax({
+            url: "{% url 'add_to_cart_ajax' %}",
+            type: "POST",
+            data: {
+                'product_id': productId,
+                'quantity': 1,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#cart-count').text(response.total_quantity);
+                    alert("Đã thêm sản phẩm vào giỏ hàng thành công!");
+                }
+            },
+            error: function(xhr) {
+                alert("Có lỗi xảy ra: " + (xhr.responseJSON ? xhr.responseJSON.message : "Vui lòng thử lại"));
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

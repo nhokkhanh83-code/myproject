@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="col-sm-9 padding-right">
+    <div class="features_items"><!--features_items-->
+        <h2 class="title text-center">
+            {% if keyword %}
+                Kết quả tìm kiếm cho: "{{ keyword }}" ({{ total_results }} sản phẩm)
+            {% else %}
+                Tất cả sản phẩm
+            {% endif %}
+        </h2>
+
+        {% for p in products %}
+        <div class="col-sm-4">
+            <div class="product-image-wrapper">
+                <div class="single-products">
+                    <div class="productinfo text-center">
+                        {% if p.image %}
+                            <img src="/media/products/{{ p.image }}" alt="{{ p.name }}" style="height: 220px; width: 100%; object-fit: cover;" />
+                        {% else %}
+                            <img src="{% static 'images/home/gallery1.jpg' %}" alt="{{ p.name }}" style="height: 220px; width: 100%; object-fit: cover;" />
+                        {% endif %}
+                        <h2>${{ p.price }}</h2>
+                        <p>{{ p.name }}</p>
+                        <a href="javascript:void(0);" class="btn btn-default add-to-cart add-to-cart-btn" data-id="{{ p.id }}">
+                            <i class="fa fa-shopping-cart"></i>Add to cart
+                        </a>
+                    </div>
+                    <!-- Nút ở khung hover (product-overlay) -->
+                    <div class="product-overlay">
+                        <div class="overlay-content">
+                            <h2>${{ p.price }}</h2>
+                            <p>{{ p.name }}</p>
+                            <a href="javascript:void(0);" class="btn btn-default add-to-cart add-to-cart-btn" data-id="{{ p.id }}">
+                                <i class="fa fa-shopping-cart"></i>Add to cart
+                            </a>
+                        </div>
+                    </div>
+                    {% if p.status == 1 %}
+                        <img src="{% static 'images/home/sale.png' %}" class="new" alt="Sale" />
+                    {% elif p.status == 0 %}
+                        <img src="{% static 'images/home/new.png' %}" class="new" alt="New" />
+                    {% endif %}
+                </div>
+                <div class="choose">
+                    <ul class="nav nav-pills nav-justified">
+                        <li><a href="{% url 'product_detail' pk=p.id %}"><i class="fa fa-plus-square"></i>More</a></li>
+                        <li><a href="#"><i class="fa fa-plus-square"></i>Add to compare</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+            <div class="col-sm-12 text-center" style="padding: 40px 0;">
+                <p style="color: #888; font-size: 16px;">
+                    Không tìm thấy sản phẩm nào có chứa từ khóa "<strong>{{ keyword }}</strong>".
+                </p>
+            </div>
+        {% endfor %}
+
+    </div><!--features_items-->
+</div>
+
+<script src="{% static 'js/jquery.js' %}"></script>
+<script>
+$(document).ready(function() {
+    $('.add-to-cart-btn').on('click', function(e) {
+        e.preventDefault();
+        var productId = $(this).data('id');
+
+        $.ajax({
+            url: "{% url 'add_to_cart_ajax' %}",
+            type: "POST",
+            data: {
+                'product_id': productId,
+                'quantity': 1,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#cart-count').text(response.total_quantity);
+                    alert("Đã thêm sản phẩm vào giỏ hàng thành công!");
+                }
+            },
+            error: function(xhr) {
+                alert("Có lỗi xảy ra: " + (xhr.responseJSON ? xhr.responseJSON.message : "Vui lòng thử lại"));
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

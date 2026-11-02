@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .advanced-search-box {
+        background: #F8F8F8;
+        padding: 15px;
+        margin-bottom: 25px;
+        border: 1px solid #ECECEC;
+    }
+    .advanced-search-box input, 
+    .advanced-search-box select {
+        width: 100%;
+        height: 38px;
+        padding: 5px 10px;
+        border: 1px solid #DDD;
+        background: #FFF;
+        margin-bottom: 10px;
+    }
+    .advanced-search-box .btn-search {
+        background: #FE980F;
+        color: #FFF;
+        border: none;
+        height: 38px;
+        width: 100%;
+        font-weight: bold;
+    }
+</style>
+
+<div class="col-sm-9 padding-right">
+    <div class="features_items">
+        <h2 class="title text-center">Search Advanced</h2>
+
+        <!-- Khung bộ lọc tìm kiếm -->
+        <!-- Khung bộ lọc tìm kiếm -->
+        <div class="advanced-search-box">
+            <form action="{% url 'search_advanced' %}" method="GET">
+                <div class="row">
+                    <!-- 1. Name -->
+                    <div class="col-sm-3">
+                        <input type="text" name="name" value="{{ selected_name }}" placeholder="Name">
+                    </div>
+
+                    <!-- 2. Choose Price (Dùng SQL BETWEEN) -->
+                    <div class="col-sm-2">
+                        <select name="price">
+                            <option value="">Choose price</option>
+                            <option value="0-500" {% if selected_price == '0-500' %}selected{% endif %}>$0 - $500</option>
+                            <option value="500-1000" {% if selected_price == '500-1000' %}selected{% endif %}>$500 - $1000</option>
+                            <option value="1000-2000" {% if selected_price == '1000-2000' %}selected{% endif %}>$1000 - $2000</option>
+                            <option value="2000-100000" {% if selected_price == '2000-100000' %}selected{% endif %}>Trở lên $2000</option>
+                        </select>
+                    </div>
+
+                    <!-- 3. Category (Động từ Database) -->
+                    <div class="col-sm-2">
+                        <select name="category">
+                            <option value="">Category</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- 4. Brand (Động từ Database) -->
+                    <div class="col-sm-2">
+                        <select name="brand">
+                            <option value="">Brand</option>
+                            {% for br in brands %}
+                                <option value="{{ br.id }}">{{ br.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- 5. Status -->
+                    <div class="col-sm-2">
+                        <select name="status">
+                            <option value="">Status</option>
+                            <option value="0" {% if selected_status == '0' %}selected{% endif %}>New</option>
+                            <option value="1" {% if selected_status == '1' %}selected{% endif %}>Sale</option>
+                        </select>
+                    </div>
+
+                    <!-- Nút Search -->
+                    <div class="col-sm-1">
+                        <button type="submit" class="btn btn-search">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Danh sách sản phẩm hiển thị ảnh chính xác -->
+        <div class="row">
+            {% for p in products %}
+            <div class="col-sm-4">
+                <div class="product-image-wrapper">
+                    <div class="single-products">
+                        <div class="productinfo text-center">
+                            {% if p.image %}
+                                <img src="/media/products/{{ p.image }}" alt="{{ p.name }}" style="height: 220px; width: 100%; object-fit: cover;" />
+                            {% else %}
+                                <img src="{% static 'images/home/gallery1.jpg' %}" alt="{{ p.name }}" style="height: 220px; width: 100%; object-fit: cover;" />
+                            {% endif %}
+                            <h2>${{ p.price }}</h2>
+                            <p>{{ p.name }}</p>
+                            <a href="javascript:void(0);" class="btn btn-default add-to-cart add-to-cart-btn" data-id="{{ p.id }}">
+                                <i class="fa fa-shopping-cart"></i>Add to cart
+                            </a>
+                        </div>
+                    </div>
+                    <div class="choose">
+                        <ul class="nav nav-pills nav-justified">
+                            <li><a href="{% url 'product_detail' pk=p.id %}"><i class="fa fa-plus-square"></i>Xem chi tiết</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+                <div class="col-sm-12 text-center" style="padding: 40px 0;">
+                    <p style="color: #888; font-size: 16px;">Không tìm thấy sản phẩm nào khớp với điều kiện lọc.</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Phân trang -->
+        {% if page_obj.has_other_pages %}
+        <div class="text-center" style="margin-top: 20px;">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li><a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">«</a></li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="active"><span>{{ num }}</span></li>
+                    {% else %}
+                        <li><a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li><a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">»</a></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

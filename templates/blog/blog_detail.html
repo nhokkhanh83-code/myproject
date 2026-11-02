@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="col-sm-9">
+    <div class="blog-post-area">
+        <h2 class="title text-center">Blog Details</h2>
+
+        <div class="single-blog-post">
+            <!-- Tiêu đề bài viết -->
+            <h3>{{ blog.title }}</h3>
+
+            <div class="post-meta">
+                <ul>
+                    <li>
+                        <i class="fa fa-user"></i>
+                        {{ blog.author }}
+                    </li>
+                    <li>
+                        <i class="fa fa-clock-o"></i>
+                        {{ blog.created_at|date:"h:i A" }}
+                    </li>
+                    <li>
+                        <i class="fa fa-calendar"></i>
+                        {{ blog.created_at|date:"M d, Y" }}
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Ảnh đại diện bài viết -->
+            {% if blog.image %}
+                <img
+                    src="{{ blog.image.url }}"
+                    alt="{{ blog.title }}"
+                    style="width: 100%; max-height: 450px; object-fit: cover;"
+                >
+            {% else %}
+                <img
+                    src="{% static 'images/blog/blog-one.jpg' %}"
+                    alt="{{ blog.title }}"
+                    style="width: 100%; max-height: 450px; object-fit: cover;"
+                >
+            {% endif %}
+
+            <!-- Nội dung bài viết -->
+            <div
+                class="blog-content"
+                style="margin-top: 20px; font-size: 15px; line-height: 1.6;"
+            >
+                {{ blog.content|safe }}
+            </div>
+
+            <!-- Nút quay lại -->
+            <div class="pager-area" style="margin-top: 30px;">
+                <a class="btn btn-primary" href="{% url 'blog_list' %}">
+                    &larr; Quay lại danh sách Blog
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- /blog-post-area -->
+
+    <!-- Khối đánh giá sao -->
+    <div class="rating-area">
+        {% include 'blog/rate.html' %}
+    </div>
+
+    <!-- Chia sẻ mạng xã hội -->
+    <div class="socials-share">
+        <a href="#">
+            <img
+                src="{% static 'images/blog/socials.png' %}"
+                alt="Share blog"
+            >
+        </a>
+    </div>
+
+<!-- DANH SÁCH BÌNH LUẬN (CHA & CON) -->
+<div class="response-area" id="comment-section">
+    <h2>{{ comment_count }} RESPONSES</h2>
+    <ul class="media-list">
+        {% for comment in comments %}
+            {% if comment.level == 0 %}
+                <!-- 1. HIỂN THỊ BÌNH LUẬN CHA (level = 0) -->
+                <li class="media" id="comment-{{ comment.id }}">
+                    <a class="pull-left" href="#">
+                        {% if comment.avatar_user %}
+                            <img class="media-object" src="{{ comment.avatar_user }}" alt="" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                            <img class="media-object" src="{% static 'images/blog/man-two.jpg' %}" alt="">
+                        {% endif %}
+                    </a>
+                    <div class="media-body">
+                        <ul class="single-post-meta">
+                            <li><i class="fa fa-user"></i> {{ comment.name_user }}</li>
+                            <li><i class="fa fa-clock-o"></i> {{ comment.created_at|date:"h:i A" }}</li>
+                            <li><i class="fa fa-calendar"></i> {{ comment.created_at|date:"M d, Y" }}</li>
+                        </ul>
+                        <p>{{ comment.cmt }}</p>
+                        <!-- Nút Replay: data-parent-id lưu ID của bình luận cha này -->
+                        <a class="btn btn-primary btn-reply" href="#comment-form-box" data-parent-id="{{ comment.id }}" data-parent-name="{{ comment.name_user }}">
+                            <i class="fa fa-reply"></i> Replay
+                        </a>
+                    </div>
+                </li>
+
+                <!-- 2. HIỂN THỊ CÁC BÌNH LUẬN CON CỦA BÌNH LUẬN CHA NÀY (level == comment.id) -->
+                {% for reply in comments %}
+                    {% if reply.level == comment.id %}
+                        <li class="media second-media" id="comment-{{ reply.id }}">
+                            <a class="pull-left" href="#">
+                                {% if reply.avatar_user %}
+                                    <img class="media-object" src="{{ reply.avatar_user }}" alt="" style="width: 100px; height: 100px; object-fit: cover;">
+                                {% else %}
+                                    <img class="media-object" src="{% static 'images/blog/man-three.jpg' %}" alt="">
+                                {% endif %}
+                            </a>
+                            <div class="media-body">
+                                <ul class="single-post-meta">
+                                    <li><i class="fa fa-user"></i> {{ reply.name_user }}</li>
+                                    <li><i class="fa fa-clock-o"></i> {{ reply.created_at|date:"h:i A" }}</li>
+                                    <li><i class="fa fa-calendar"></i> {{ reply.created_at|date:"M d, Y" }}</li>
+                                </ul>
+                                <p>{{ reply.cmt }}</p>
+                                <!-- Nút Replay của cmt con vẫn trỏ parent-id về cmt cha -->
+                                <a class="btn btn-primary btn-reply" href="#comment-form-box" data-parent-id="{{ comment.id }}" data-parent-name="{{ reply.name_user }}">
+                                    <i class="fa fa-reply"></i> Replay
+                                </a>
+                            </div>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% empty %}
+            <p>Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
+        {% endfor %}
+    </ul>
+</div><!--/Response-area-->
+
+    <!-- KHUNG VIẾT BÌNH LUẬN ĐẶT TRONG THẺ FORM -->
+    <div class="replay-box" id="comment-form-box">
+        <div class="row">
+            <div class="col-sm-12">
+                <h2 id="reply-title">Leave a replay</h2>
+
+                <!-- Thông báo đang trả lời bình luận cha nào (mặc định ẩn) -->
+                <div id="reply-info" style="display: none; margin-bottom: 10px;">
+                    <span class="label label-info" style="font-size: 13px;">
+                        Đang trả lời: <strong id="reply-user-name"></strong>
+                    </span>
+                    <a href="javascript:void(0);" id="cancel-reply" style="margin-left: 10px; color: red; font-size: 13px;">[Hủy trả lời]</a>
+                </div>
+
+                <form id="comment-form" method="POST">
+                    {% csrf_token %}
+                    <!-- Input ẩn lưu level: Mặc định = 0 (cmt cha), khi bấm Replay sẽ đổi thành ID cmt cha -->
+                    <input type="hidden" name="level" id="comment-level" value="0">
+
+                    <div class="text-area">
+                        <div class="blank-arrow">
+                            <label>{% if user.is_authenticated %}{{ user.username }}{% else %}Your Name{% endif %}</label>
+                        </div>
+                        <span>*</span>
+                        <textarea name="message" id="comment-message" rows="11" placeholder="Nhập nội dung bình luận..."></textarea>
+                        <button type="submit" class="btn btn-primary">post comment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div><!--/Replay Box-->
+
+
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    var isAuthenticated = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+    var blogId = "{{ blog.id }}";
+
+    // 1. Hiệu ứng hover chuột qua lại các ngôi sao
+    $('.ratings_stars').hover(
+        function() {
+            $(this).prevAll().addBack().addClass('ratings_hover');
+        },
+        function() {
+            $(this).prevAll().addBack().removeClass('ratings_hover');
+        }
+    );
+
+    // 2. Click đánh giá sao
+    $('.ratings_stars').click(function() {
+        if (!isAuthenticated) {
+            alert('Vui lòng đăng nhập để đánh giá!');
+            return false;
+        }
+
+        var rateValue = $(this).find("input").val();
+
+        if ($(this).hasClass('ratings_over')) {
+            $('.ratings_stars').removeClass('ratings_over');
+            $(this).prevAll().addBack().addClass('ratings_over');
+        } else {
+            $(this).prevAll().addBack().addClass('ratings_over');
+        }
+
+        // Gửi AJAX lưu điểm
+        $.ajax({
+            url: "{% url 'ajax_rate' %}",
+            type: "POST",
+            data: {
+                'blog_id': blogId,
+                'rate': rateValue,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert('Đánh giá thành công ' + rateValue + ' sao!');
+                    location.reload();
+                } else if (response.status === 'already_rated') {
+                    alert(response.message);
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log("Lỗi rate: " + error);
+            }
+        });
+    });
+
+    // 3. Xử lý khi bấm nút Replay ở một bình luận cha
+    $(document).on('click', '.btn-reply', function(e) {
+        e.preventDefault();
+        if (!isAuthenticated) {
+            alert('Vui lòng login để cmt!');
+            return false;
+        }
+
+        var parentId = $(this).data('parent-id');
+        var parentName = $(this).data('parent-name');
+
+        $('#comment-level').val(parentId);
+        $('#reply-user-name').text(parentName);
+        $('#reply-info').show();
+
+        $('html, body').animate({
+            scrollTop: $('#comment-form-box').offset().top - 50
+        }, 500);
+        $('#comment-message').focus();
+    });
+
+    // Nút hủy trả lời (quay về bình luận cha level = 0)
+    $('#cancel-reply').click(function() {
+        $('#comment-level').val(0);
+        $('#reply-info').hide();
+    });
+
+    // Bấm vào ô bình luận khi chưa đăng nhập -> Alert ngay
+    $('#comment-message').on('click focus', function() {
+        if (!isAuthenticated) {
+            $(this).blur();
+            alert('Vui lòng login để cmt!');
+            return false;
+        }
+    });
+
+    // 4. Gửi bình luận bằng AJAX
+    $('#comment-form').submit(function(e) {
+        e.preventDefault();
+
+        // Kiểm tra đăng nhập
+        if (!isAuthenticated) {
+            alert('Vui lòng login để cmt!');
+            return false;
+        }
+
+        // Kiểm tra nội dung rỗng
+        var message = $('#comment-message').val().trim();
+        if (message === "") {
+            alert('Vui lòng nhập nội dung bình luận!');
+            return false;
+        }
+
+        var levelVal = $('#comment-level').val() || 0;
+
+        // Gửi AJAX lưu comment vào Database
+        $.ajax({
+            url: "{% url 'comment' %}",
+            type: "POST",
+            data: {
+                'blog_id': blogId,
+                'message': message,
+                'level': levelVal,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert(response.message || 'Bình luận thành công!');
+                    $('#comment-message').val('');
+                    location.reload();
+                } else {
+                    alert(response.message || 'Đã xảy ra lỗi!');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log("Lỗi gửi comment: ", error);
+                console.log("Chi tiết từ server: ", xhr.responseText);
+                alert("Không thể gửi bình luận, vui lòng kiểm tra Console (F12)!");
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

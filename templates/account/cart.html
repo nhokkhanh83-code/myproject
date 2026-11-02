@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content_full %}
+<style>
+    /* 1. Màu vàng đậm cho thanh tiêu đề bảng (Item, Price, Quantity, Total) */
+    .cart_info .table .cart_menu {
+        background-color: #FE980F !important; /* Hoặc đổi thành #f1c40f nếu thích vàng tươi */
+        color: #fff;
+        font-weight: bold;
+    }
+
+    /* 2. Màu vàng nhạt và viền cho các dòng sản phẩm trong bảng */
+    .cart_info .table {
+        border: 2px solid #d4ac0d !important;
+        background-color: #fef9e7;
+    }
+    
+    .cart_info .table > thead > tr > td,
+    .cart_info .table > tbody > tr > td {
+        border: 1px solid #d4ac0d !important;
+        vertical-align: middle;
+    }
+
+ 
+</style>
+<div class="breadcrumbs">
+    <ol class="breadcrumb">
+        <li><a href="{% url 'index' %}">Home</a></li>
+        <li class="active">Shopping Cart</li>
+    </ol>
+</div>
+
+<div class="table-responsive cart_info">
+    <table class="table table-condensed">
+        <thead>
+            <tr class="cart_menu">
+                <td class="image">Item</td>
+                <td class="description"></td>
+                <td class="price">Price</td>
+                <td class="quantity">Quantity</td>
+                <td class="total">Total</td>
+                <td></td>
+            </tr>
+        </thead>
+        <tbody>
+            {% if cart_items %}
+                {% for item in cart_items %}
+                <tr>
+                    <td class="cart_product">
+                        <a href="{% url 'product_detail' pk=item.id %}">
+                        {% if item.image %}
+                            <img src="/media/products/{{ item.image }}" alt="{{ item.name }}" style="width: 100px; height: 100px; object-fit: contain;">
+                        {% else %}
+                            <img src="{% static 'images/home/gallery1.jpg' %}" alt="{{ item.name }}" style="width: 100px; height: 100px; object-fit: contain;">
+                        {% endif %}
+                        </a>
+                    </td>
+                    <td class="cart_description">
+                        <h4><a href="{% url 'product_detail' pk=item.id %}">{{ item.name }}</a></h4>
+                        <p>Web ID: {{ item.id }}</p>
+                    </td>
+                    <td class="cart_price">
+                        <p>${{ item.price|floatformat:0 }}</p>
+                    </td>
+                    <td class="cart_quantity">
+                        <div class="cart_quantity_button">
+                            <a class="cart_quantity_up" href="{% url 'update_cart_quantity' product_id=item.id action='up' %}" onclick="updateQty(event, this, 'up')"> + </a>
+                            <input class="cart_quantity_input" type="text" name="quantity" value="{{ item.quantity }}" autocomplete="off" size="2">
+                            <a class="cart_quantity_down" href="{% url 'update_cart_quantity' product_id=item.id action='down' %}" onclick="updateQty(event, this, 'down')"> - </a>
+                        </div>
+                    </td>
+                    <td class="cart_total">
+                        <p class="cart_total_price">${{ item.subtotal|floatformat:0 }}</p>
+                    </td>
+                    <td class="cart_delete">
+                        <a class="cart_quantity_delete" href="{% url 'delete_cart_item' product_id=item.id %}" onclick="deleteItem(event, this)"><i class="fa fa-times"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6" class="text-center" style="padding: 50px 0; font-size: 16px; color: #696763;">
+                        Chưa có sản phẩm nào trong giỏ hàng.
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% if cart_items %}
+<div class="heading">
+    <h3>What would you like to do next?</h3>
+    <p>Choose if you have a discount code or reward points you want to use or would like to estimate your delivery cost.</p>
+</div>
+<div class="row">
+    <div class="col-sm-6">
+        <div class="chose_area">
+            <ul class="user_option">
+                <li>
+                    <input type="checkbox">
+                    <label>Use Coupon Code</label>
+                </li>
+                <li>
+                    <input type="checkbox">
+                    <label>Use Gift Voucher</label>
+                </li>
+                <li>
+                    <input type="checkbox">
+                    <label>Estimate Shipping & Taxes</label>
+                </li>
+            </ul>
+            <ul class="user_info">
+                <li class="single_field">
+                    <label>Country:</label>
+                    <select>
+                        <option>United States</option>
+                        <option>Bangladesh</option>
+                        <option>UK</option>
+                        <option>India</option>
+                        <option>Pakistan</option>
+                        <option>Ucrane</option>
+                        <option>Canada</option>
+                        <option>Dubai</option>
+                    </select>
+                </li>
+                <li class="single_field">
+                    <label>Region / State:</label>
+                    <select>
+                        <option>Select</option>
+                        <option>Dhaka</option>
+                        <option>London</option>
+                        <option>Dillih</option>
+                        <option>Lahore</option>
+                        <option>Alaska</option>
+                        <option>Canada</option>
+                        <option>Dubai</option>
+                    </select>
+                </li>
+                <li class="single_field zip-field">
+                    <label>Zip Code:</label>
+                    <input type="text">
+                </li>
+            </ul>
+            <a class="btn btn-default update" href="">Get Quotes</a>
+            <a class="btn btn-default check_out" href="">Continue</a>
+        </div>
+    </div>
+    <div class="col-sm-6">
+<div class="total_area">
+                <ul>
+                    <li>Cart Sub Total <span id="cart-sub-total">${{ grand_total|floatformat:0 }}</span></li>
+                    <li>Eco Tax <span>$2</span></li>
+                    <li>Shipping Cost <span>Free</span></li>
+                    <li>Total <span id="cart-grand-total">${{ grand_total|add:2|floatformat:0 }}</span></li>
+                </ul>
+                <a class="btn btn-default update" href="{% url 'cart_view' %}">Update</a>
+                <a class="btn btn-default check_out" href="{% url 'checkout' %}">Check Out</a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+// Hàm tính lại tổng tiền toàn giỏ hàng
+function recalculateGrandTotal() {
+    let grandTotal = 0;
+    document.querySelectorAll('.cart_total_price').forEach(function(el) {
+        let val = parseFloat(el.innerText.replace(/[^0-9.-]+/g, "")) || 0;
+        grandTotal += val;
+    });
+
+    let subTotalEl = document.getElementById('cart-sub-total');
+    let grandTotalEl = document.getElementById('cart-grand-total');
+
+    if (subTotalEl) subTotalEl.innerText = '$' + grandTotal;
+    if (grandTotalEl) grandTotalEl.innerText = '$' + (grandTotal > 0 ? grandTotal + 2 : 0);
+}
+
+// Hàm xử lý khi bấm + hoặc -
+function updateQty(event, btn, action) {
+    event.preventDefault(); // Chặn đứng việc tải lại trang ngay lập tức!
+
+    let url = btn.getAttribute('href');
+    let row = btn.closest('tr');
+    let input = row.querySelector('.cart_quantity_input');
+    let priceText = row.querySelector('.cart_price p').innerText;
+    let price = parseFloat(priceText.replace(/[^0-9.-]+/g, "")) || 0;
+    let totalEl = row.querySelector('.cart_total_price');
+
+    let currentQty = parseInt(input.value) || 1;
+    if (action === 'up') {
+        currentQty += 1;
+    } else {
+        currentQty -= 1;
+    }
+
+    // Gửi yêu cầu ngầm về server Django để lưu lại
+    fetch(url, { method: 'GET' });
+
+    if (currentQty <= 0) {
+        row.remove();
+    } else {
+        input.value = currentQty;
+        totalEl.innerText = '$' + (price * currentQty);
+    }
+
+    recalculateGrandTotal();
+    return false;
+}
+
+// Hàm xử lý khi bấm nút Xóa (x)
+function deleteItem(event, btn) {
+    event.preventDefault(); // Chặn đứng việc tải lại trang!
+
+    if (confirm('Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) {
+        let url = btn.getAttribute('href');
+        let row = btn.closest('tr');
+
+        fetch(url, { method: 'GET' });
+        row.remove();
+        recalculateGrandTotal();
+    }
+    return false;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Style cho form Search Advanced ngang */
+    .search-advanced-bar {
+        background: #F8F8F8;
+        padding: 12px 10px 5px 10px;
+        margin-bottom: 25px;
+        border: 1px solid #ECECEC;
+    }
+    .search-advanced-bar input,
+    .search-advanced-bar select {
+        width: 100%;
+        height: 38px;
+        padding: 4px 8px;
+        margin-bottom: 10px;
+        border: 1px solid #DDD;
+        background: #FFF;
+        font-size: 13px;
+    }
+    .search-advanced-bar .btn-search-adv {
+        background: #FE980F;
+        color: #FFF;
+        border: none;
+        height: 38px;
+        width: 100%;
+        font-weight: bold;
+    }
+</style>
+
+<div class="col-sm-9">
+    <!-- Khu vực sản phẩm trang Shop -->
+    <div class="features_items">
+        <h2 class="title text-center">Features Items</h2>
+
+        <!-- Khóa Flexbox trên #product-list để chia 3 cột đều tăm tắp, không bị rớt dòng -->
+        <div id="product-list" class="row" style="display: flex; flex-wrap: wrap;">
+            {% for product in products %}
+            <div class="col-sm-4" style="display: flex; flex-direction: column; margin-bottom: 30px;">
+                <div class="product-image-wrapper" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+                    <div class="single-products">
+                        <div class="productinfo text-center">
+                            <a href="{% url 'product_detail' product.id %}">
+                                <!-- Khung cố định ảnh 200px, ảnh tự căn giữa không bị méo -->
+                                <div style="height: 200px; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fcfcfc;">
+                                    {% if product.image %}
+                                        <img src="/media/products/{{ product.image }}" alt="{{ product.name }}" style="max-height: 190px; max-width: 100%; object-fit: contain;" />
+                                    {% else %}
+                                        <img src="{% static 'images/home/gallery1.jpg' %}" alt="{{ product.name }}" style="max-height: 190px; max-width: 100%; object-fit: contain;" />
+                                    {% endif %}
+                                </div>
+                            </a>
+                            <h2>${{ product.price }}</h2>
+                            <!-- Giới hạn tên sản phẩm tối đa 2 dòng để chiều cao thẻ luôn bằng nhau -->
+                            <p style="min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="{{ product.name }}">
+                                {{ product.name }}
+                            </p>
+                            <a href="javascript:void(0);" class="btn btn-default add-to-cart add-to-cart-btn" data-id="{{ product.id }}">
+                                <i class="fa fa-shopping-cart"></i>Add to cart
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-sm-12 text-center" style="padding: 40px 0;">
+                <p style="color: #888; font-size: 16px;">Không có sản phẩm nào.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/jquery.js' %}"></script>
+<script>
+$(document).ready(function() {
+    $('.add-to-cart-btn').on('click', function(e) {
+        e.preventDefault();
+        var productId = $(this).data('id');
+
+        $.ajax({
+            url: "{% url 'add_to_cart_ajax' %}",
+            type: "POST",
+            data: {
+                'product_id': productId,
+                'quantity': 1,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#cart-count').text(response.total_quantity);
+                    alert("Đã thêm sản phẩm vào giỏ hàng thành công!");
+                }
+            },
+            error: function(xhr) {
+                alert("Có lỗi xảy ra: " + (xhr.responseJSON ? xhr.responseJSON.message : "Vui lòng thử lại"));
+            }
+        });
+    });
+});
+</script>
+<script src="{% static 'js/jquery.js' %}"></script>
+<script>
+$(document).ready(function() {
+    // 1. Bắt sự kiện khi kéo thanh màu vàng (#sl2) dừng lại (slideStop)
+    $('#sl2').slider().on('slideStop', function(ev) {
+        var minPrice = 0;
+        var maxPrice = 600;
+
+        // Lấy giá trị min, max từ slider
+        if (ev && Array.isArray(ev.value)) {
+            minPrice = ev.value[0];
+            maxPrice = ev.value[1];
+        } else {
+            var valArr = $(this).val().split(',');
+            if (valArr.length === 2) {
+                minPrice = parseFloat(valArr[0]);
+                maxPrice = parseFloat(valArr[1]);
+            }
+        }
+
+        console.log("Khoảng giá đã chọn:", minPrice, "-", maxPrice);
+
+        // 2. Dùng AJAX gửi qua View xử lý
+        $.ajax({
+            url: "{% url 'ajax_filter_price' %}",
+            type: "GET",
+            data: {
+                'min_price': minPrice,
+                'max_price': maxPrice
+            },
+            success: function(response) {
+                // 3. Nhận kết quả từ View và hiển thị lại HTML bên phải
+                if (response.status === 'success') {
+                    var products = response.products;
+                    var html = '';
+
+                    if (products.length > 0) {
+                        $.each(products, function(index, p) {
+                            var imgUrl = p.image ? ('/media/products/' + p.image) : "{% static 'images/home/gallery1.jpg' %}";
+
+                            html += `
+                            <div class="col-sm-4">
+                                <div class="product-image-wrapper">
+                                    <div class="single-products">
+                                        <div class="productinfo text-center">
+                                            <a href="/product-detail/${p.id}/">
+                                                <img src="${imgUrl}" alt="${p.name}" style="height: 220px; width: 100%; object-fit: contain;" />
+                                            </a>
+                                            <h2>$${p.price}</h2>
+                                            <p>${p.name}</p>
+                                            <a href="javascript:void(0);" class="btn btn-default add-to-cart add-to-cart-btn" data-id="${p.id}">
+                                                <i class="fa fa-shopping-cart"></i>Add to cart
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="choose">
+                                        <ul class="nav nav-pills nav-justified">
+                                            <li><a href="/product-detail/${p.id}/"><i class="fa fa-plus-square"></i>Product Detail</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                    } else {
+                        html = `
+                        <div class="col-sm-12 text-center" style="padding: 40px 0;">
+                            <h4>Không có sản phẩm nào trong khoảng giá $${minPrice} - $${maxPrice}.</h4>
+                        </div>`;
+                    }
+
+                    // Thay đổi nội dung danh sách sản phẩm bên phải
+                    $('#product-list').html(html);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Lỗi khi lọc giá:", error);
+            }
+        });
+    });
+
+    // 4. Ủy quyền sự kiện click cho các nút Add to Cart vừa được tạo động từ AJAX
+    $(document).on('click', '.add-to-cart-btn', function(e) {
+        e.preventDefault();
+        var productId = $(this).attr('data-id') || $(this).data('id');
+        var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+
+        $.ajax({
+            url: "{% url 'add_to_cart_ajax' %}",
+            type: "POST",
+            data: {
+                'product_id': productId,
+                'quantity': 1,
+                'csrfmiddlewaretoken': csrfToken
+            },
+            success: function(res) {
+                if (res.status === 'success') {
+                    if (res.total_quantity !== undefined) {
+                        $('#cart-count').text(res.total_quantity);
+                    }
+                    alert("Đã thêm sản phẩm vào giỏ hàng!");
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

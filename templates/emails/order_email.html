@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+        .container { max-width: 650px; margin: 0 auto; border: 1px solid #e1e1e1; padding: 20px; }
+        .header { background: #FE980F; color: #fff; padding: 15px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .total { font-weight: bold; color: #FE980F; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>CẢM ƠN BẠN ĐÃ ĐẶT HÀNG TẠI E-SHOPPER!</h2>
+        </div>
+        <p>Xin chào <strong>{{ user_name }}</strong>,</p>
+        <p>Đơn hàng của bạn đã được tiếp nhận thành công. Dưới đây là thông tin chi tiết đơn hàng của bạn:</p>
+        
+        <p><strong>Email:</strong> {{ user_email }}<br>
+        <strong>Số điện thoại:</strong> {{ user_phone }}</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th style="text-align: center;">Đơn giá</th>
+                    <th style="text-align: center;">Số lượng</th>
+                    <th style="text-align: center;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td style="text-align: center;">${{ item.price|floatformat:0 }}</td>
+                    <td style="text-align: center;">{{ item.quantity }}</td>
+                    <td style="text-align: center;">${{ item.subtotal|floatformat:0 }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="3" style="text-align: right;"><strong>Tạm tính:</strong></td>
+                    <td style="text-align: center;">${{ grand_total|floatformat:0 }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="text-align: right;"><strong>Eco Tax:</strong></td>
+                    <td style="text-align: center;">$2</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="text-align: right;"><strong>Phí vận chuyển:</strong></td>
+                    <td style="text-align: center;">Free</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="text-align: right;"><strong>Tổng thanh toán:</strong></td>
+                    <td style="text-align: center;" class="total">${{ final_total|floatformat:0 }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top: 25px;">Đơn hàng sẽ sớm được nhân viên liên hệ để giao đến bạn.</p>
+        <p>Trân trọng,<br><strong>Đội ngũ E-Shopper</strong></p>
+    </div>
+</body>
+</html>

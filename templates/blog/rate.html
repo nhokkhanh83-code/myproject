@@ -1,0 +1,14 @@
+{% load static %}
+<!-- THÊM DÒNG NÀY ĐỂ HIỆN CÁC NGÔI SAO LÊN TRANG WEB -->
+<link type="text/css" rel="stylesheet" href="{% static 'css/rate.css' %}">
+
+<div class="rate" data-blog-id="{{ blog.id }}">
+    <div class="vote">
+        <div class="star_1 ratings_stars {% if avg_rate >= 1 %}ratings_vote{% endif %}"><input value="1" type="hidden"></div>
+        <div class="star_2 ratings_stars {% if avg_rate >= 2 %}ratings_vote{% endif %}"><input value="2" type="hidden"></div>
+        <div class="star_3 ratings_stars {% if avg_rate >= 3 %}ratings_vote{% endif %}"><input value="3" type="hidden"></div>
+        <div class="star_4 ratings_stars {% if avg_rate >= 4 %}ratings_vote{% endif %}"><input value="4" type="hidden"></div>
+        <div class="star_5 ratings_stars {% if avg_rate >= 5 %}ratings_vote{% endif %}"><input value="5" type="hidden"></div>
+        <span class="rate-np">{{ avg_rate|default:"0" }}</span> ({{ vote_count|default:"0" }} votes)
+    </div> 
+</div>

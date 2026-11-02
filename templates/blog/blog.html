@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="col-sm-9">
+    <div class="blog-post-area">
+        <h2 class="title text-center">Latest From our Blog</h2>
+
+        <!-- VÒNG LẶP CHO TỪNG BÀI VIẾT BLOG -->
+        {% for blog in page_obj %}
+            <div class="single-blog-post">
+                <!-- Tiêu đề bài viết -->
+                <h3>
+                    <a href="{% url 'blog_detail' blog.id %}" style="color: inherit;">
+                        {{ blog.title }}
+                    </a>
+                </h3>
+
+                <!-- Thông tin tác giả, giờ đăng, ngày đăng -->
+                <div class="post-meta">
+                    <ul>
+                        <li><i class="fa fa-user"></i> {{ blog.author }}</li>
+                        <li><i class="fa fa-clock-o"></i> {{ blog.created_at|date:"h:i A" }}</li>
+                        <li><i class="fa fa-calendar"></i> {{ blog.created_at|date:"M d, Y" }}</li>
+                    </ul>
+                    <!-- Định nghĩa 2 class màu sao: vàng (#FE980F) và xám (#ccc) -->
+                    <style>
+                        .star-gold { color: #FE980F !important; }
+                        .star-gray { color: #ccc !important; }
+                    </style>
+
+                    <span>
+                        <!-- Sao 1 -->
+                        <i class="fa fa-star {% if blog.get_avg_rate >= 1 %}star-gold{% else %}star-gray{% endif %}"></i>
+                        <!-- Sao 2 -->
+                        <i class="fa fa-star {% if blog.get_avg_rate >= 2 %}star-gold{% else %}star-gray{% endif %}"></i>
+                        <!-- Sao 3 -->
+                        <i class="fa fa-star {% if blog.get_avg_rate >= 3 %}star-gold{% else %}star-gray{% endif %}"></i>
+                        <!-- Sao 4 -->
+                        <i class="fa fa-star {% if blog.get_avg_rate >= 4 %}star-gold{% else %}star-gray{% endif %}"></i>
+                        <!-- Sao 5 -->
+                        <i class="fa fa-star {% if blog.get_avg_rate >= 5 %}star-gold{% else %}star-gray{% endif %}"></i>
+
+                        <small style="color: #666;">({{ blog.get_vote_count }} vote)</small>
+                    </span>
+                </div>
+
+                <!-- Ảnh đại diện bài viết -->
+                <a href="{% url 'blog_detail' blog.id %}">
+                    {% if blog.image %}
+                        <img src="{{ blog.image.url }}" alt="{{ blog.title }}" style="width: 100%; max-height: 400px; object-fit: cover;">
+                    {% else %}
+                        <img src="{% static 'images/blog/blog-one.jpg' %}" alt="{{ blog.title }}">
+                    {% endif %}
+                </a>
+
+                <!-- Mô tả ngắn hoặc trích đoạn nội dung (lấy tối đa 40 từ) -->
+                <p>
+                    {% if blog.description %}
+                        {{ blog.description|safe|truncatewords:40 }}
+                    {% else %}
+                        {{ blog.content|safe|truncatewords:40 }}
+                    {% endif %}
+                </p>
+
+                <!-- Nút Read More dẫn sang trang chi tiết (Blog Detail) -->
+                <a class="btn btn-primary" href="{% url 'blog_detail' blog.id %}">Read More</a>
+            </div>
+        {% empty %}
+            <p class="text-center">Chưa có bài viết nào trong hệ thống.</p>
+        {% endfor %}
+
+        <!-- KHU VỰC PHÂN TRANG (PAGINATION) -->
+        {% if page_obj.has_other_pages %}
+            <div class="pagination-area">
+                <ul class="pagination">
+                    <!-- Nút lùi về trang trước -->
+                    {% if page_obj.has_previous %}
+                        <li><a href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+                    {% endif %}
+
+                    <!-- Danh sách các số trang: 1, 2, 3... -->
+                    {% for num in page_obj.paginator.page_range %}
+                        <li class="{% if page_obj.number == num %}active{% endif %}">
+                            <a href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+
+                    <!-- Nút sang trang kế tiếp -->
+                    {% if page_obj.has_next %}
+                        <li><a href="?page={{ page_obj.next_page_number }}"><i class="fa fa-angle-double-right"></i></a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content_full %}
+<div class="breadcrumbs">
+    <ol class="breadcrumb">
+        <li><a href="{% url 'index' %}">Home</a></li>
+        <li class="active">Check out</li>
+    </ol>
+</div>
+
+<!-- THÔNG BÁO FLASH MESSAGE -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} text-center" style="font-weight: bold; font-size: 15px;">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<form action="{% url 'checkout' %}" method="POST">
+    {% csrf_token %}
+
+    <!-- PHẦN 1: THÔNG TIN KHÁCH HÀNG (LOGIN RỒI HOẶC FORM ĐĂNG KÝ) -->
+    <div class="step-one" style="margin-bottom: 25px;">
+        <h2 class="heading" style="background: #FE980F; color: #fff; font-size: 18px; padding: 10px 15px; margin: 0;">
+            {% if user.is_authenticated %}
+                Thông tin người nhận hàng
+            {% else %}
+                Đăng ký tài khoản nhanh & Thông tin giao hàng
+            {% endif %}
+        </h2>
+    </div>
+
+    <div class="checkout-options" style="margin-bottom: 30px;">
+        {% if user.is_authenticated %}
+            <!-- KHI ĐÃ ĐĂNG NHẬP -->
+            <div class="alert alert-info" style="font-size: 15px; background: #f8f8f8; border: 1px solid #e1e1e1; color: #333;">
+                <p><strong>Tài khoản:</strong> {{ user.username }}</p>
+                <p><strong>Email nhận xác nhận:</strong> {{ user.email }}</p>
+                <p style="margin-bottom: 0;">
+                    <strong>Số điện thoại:</strong> 
+                    {% if user.phone %}
+                        {{ user.phone }}
+                    {% else %}
+                        <input type="text" name="phone" placeholder="Nhập số điện thoại liên hệ" required style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; width: 250px;">
+                    {% endif %}
+                </p>
+            </div>
+        {% else %}
+            <!-- KHI CHƯA ĐĂNG NHẬP (FORM ĐĂNG KÝ NHANH) -->
+            <p style="color: #696763; margin-bottom: 15px;">Bạn chưa đăng nhập. Vui lòng điền thông tin đăng ký nhanh bên dưới để hoàn tất đơn hàng:</p>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div style="margin-bottom: 12px;">
+                        <label>Tên đăng nhập (Username) *:</label>
+                        <input type="text" name="username" class="form-control" placeholder="Username" required>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label>Email *:</label>
+                        <input type="email" name="email" class="form-control" placeholder="Email nhận hóa đơn" required>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label>Số điện thoại:</label>
+                        <input type="text" name="phone" class="form-control" placeholder="Số điện thoại liên hệ">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div style="margin-bottom: 12px;">
+                        <label>Mật khẩu *:</label>
+                        <input type="password" name="password" class="form-control" placeholder="Mật khẩu" required>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label>Xác nhận mật khẩu *:</label>
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Nhập lại mật khẩu" required>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label>Địa chỉ nhận hàng:</label>
+                        <input type="text" name="address" class="form-control" placeholder="Địa chỉ giao hàng">
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- PHẦN 2: BẢNG SẢN PHẨM ĐỒNG BỘ TỪ CART -->
+    <div class="review-payment" style="margin-bottom: 15px;">
+        <h2 style="font-size: 18px; color: #363432; font-weight: bold;">Review & Payment</h2>
+    </div>
+
+    <div class="table-responsive cart_info" style="border: 1px solid #E6E4DF; margin-bottom: 25px;">
+        <table class="table table-condensed" style="margin-bottom: 0;">
+            <thead>
+                <tr class="cart_menu" style="background: #FE980F; color: #fff;">
+                    <td class="image" style="padding-left: 20px;">Item</td>
+                    <td class="description"></td>
+                    <td class="price" style="text-align: center;">Price</td>
+                    <td class="quantity" style="text-align: center;">Quantity</td>
+                    <td class="total" style="text-align: center;">Total</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% if cart_items %}
+                    {% for item in cart_items %}
+                    <tr>
+                        <td class="cart_product" style="padding: 15px 20px;">
+                            <a href="{% url 'product_detail' pk=item.id %}">
+                                {% if item.image %}
+                                    <img src="/media/products/{{ item.image }}" alt="{{ item.name }}" style="width: 80px; height: 80px; object-fit: contain;">
+                                {% else %}
+                                    <img src="{% static 'images/home/gallery1.jpg' %}" alt="{{ item.name }}" style="width: 80px; height: 80px; object-fit: contain;">
+                                {% endif %}
+                            </a>
+                        </td>
+                        <td class="cart_description">
+                            <h4><a href="{% url 'product_detail' pk=item.id %}" style="color: #363432;">{{ item.name }}</a></h4>
+                            <p style="color: #696763;">Web ID: {{ item.id }}</p>
+                        </td>
+                        <td class="cart_price" style="text-align: center; vertical-align: middle;">
+                            <p style="margin: 0; color: #696763; font-size: 16px;">${{ item.price|floatformat:0 }}</p>
+                        </td>
+                        <td class="cart_quantity" style="text-align: center; vertical-align: middle;">
+                            <span style="font-weight: bold; font-size: 16px; color: #363432;">{{ item.quantity }}</span>
+                        </td>
+                        <td class="cart_total" style="text-align: center; vertical-align: middle;">
+                            <p class="cart_total_price" style="margin: 0; color: #FE980F; font-size: 18px; font-weight: bold;">${{ item.subtotal|floatformat:0 }}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <td colspan="4" style="text-align: right; padding: 12px 20px; font-weight: bold; background: #F8F8F8;">Cart Sub Total</td>
+                        <td style="text-align: center; padding: 12px 10px; font-weight: bold; background: #F8F8F8;">${{ grand_total|floatformat:0 }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="text-align: right; padding: 12px 20px; font-weight: bold; background: #F8F8F8;">Eco Tax</td>
+                        <td style="text-align: center; padding: 12px 10px; font-weight: bold; background: #F8F8F8;">$2</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="text-align: right; padding: 12px 20px; font-weight: bold; background: #F8F8F8;">Shipping Cost</td>
+                        <td style="text-align: center; padding: 12px 10px; font-weight: bold; background: #F8F8F8;">Free</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="text-align: right; padding: 12px 20px; font-size: 18px; font-weight: bold; color: #FE980F; background: #F0F0E9;">Total</td>
+                        <td style="text-align: center; padding: 12px 10px; font-size: 20px; font-weight: bold; color: #FE980F; background: #F0F0E9;">${{ final_total|floatformat:0 }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center" style="padding: 40px 0; color: #888; font-size: 16px;">
+                            Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi thanh toán!
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- NÚT BẤM ĐẶT HÀNG (ORDER) -->
+    {% if cart_items %}
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 50px;">
+        <button type="submit" class="btn btn-primary" style="background: #FE980F; border: none; font-size: 18px; font-weight: bold; padding: 10px 40px; border-radius: 0;">
+            Order (Đặt hàng)
+        </button>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}
