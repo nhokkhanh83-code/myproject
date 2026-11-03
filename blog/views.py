@@ -5,32 +5,31 @@ from django.db.models import Avg
 from .models import Blog, Rate, Comment
 from django.utils.dateformat import format as date_format
 
+
 def index(request):
     return render(request, 'index.html')
 
+
 def blog_list(request):
     blogs = Blog.objects.all().order_by('-created_at')
-    paginator = Paginator(blogs, 3)  # Phân trang 3 bài viết / trang
+    paginator = Paginator(blogs, 3)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(request, 'blog/blog.html', {'page_obj': page_obj})
+
 
 def blog_detail(request, pk):
     blog = get_object_or_404(Blog, pk=pk)
-    
-    # Tính điểm trung bình cộng (TBC) các lượt đánh giá của bài viết này
+
     avg_query = Rate.objects.filter(blog=blog).aggregate(Avg('rate'))['rate__avg']
-    avg_rate = round(avg_query) if avg_query is not None else 0  # Làm tròn điểm
-    
-    # Đếm tổng số lượt vote
+    avg_rate = round(avg_query) if avg_query is not None else 0
+
     vote_count = Rate.objects.filter(blog=blog).count()
 
-    # Lấy danh sách bình luận của bài viết này
     comments = Comment.objects.filter(blog=blog).order_by('created_at')
     comment_count = comments.count()
 
-    # Truyền thêm avg_rate và vote_count sang file HTML
     return render(request, 'blog/blog_detail.html', {
         'blog': blog,
         'avg_rate': avg_rate,
@@ -38,10 +37,15 @@ def blog_detail(request, pk):
         'comments': comments,
         'comment_count': comment_count,
     })
+
+
 def post_comment(request, pk):
     if request.method == 'POST':
         if not request.user.is_authenticated:
-            return JsonResponse({'status': 'not_logged_in', 'message': 'Vui lòng login để cmt!'})
+            return JsonResponse({
+                'status': 'not_logged_in',
+                'message': 'Vui lòng login để cmt!'
+            })
 
         blog = get_object_or_404(Blog, pk=pk)
         cmt_text = request.POST.get('message', '').strip()
@@ -49,7 +53,7 @@ def post_comment(request, pk):
 
         if cmt_text:
             avatar_url = request.user.avatar.url if getattr(request.user, 'avatar', None) else ''
-            
+
             Comment.objects.create(
                 cmt=cmt_text,
                 blog=blog,
@@ -58,64 +62,83 @@ def post_comment(request, pk):
                 name_user=request.user.username,
                 level=level
             )
-            # Sửa thành return JsonResponse để khớp với AJAX ở giao diện
-            return JsonResponse({'status': 'success', 'message': 'Bình luận thành công!'})
 
-    return JsonResponse({'status': 'error', 'message': 'Yêu cầu không hợp lệ.'})
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Bình luận thành công!'
+            })
+
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Yêu cầu không hợp lệ.'
+    })
+
 
 def ajax_rate(request):
     if request.method == 'POST':
-        # 1. Kiểm tra đăng nhập
         if not request.user.is_authenticated:
-            return JsonResponse({'status': 'not_logged_in', 'message': 'Vui lòng đăng nhập để đánh giá!'})
+            return JsonResponse({
+                'status': 'not_logged_in',
+                'message': 'Vui lòng đăng nhập để đánh giá!'
+            })
 
         blog_id = request.POST.get('blog_id')
         rate_val = request.POST.get('rate')
 
         if blog_id and rate_val:
             blog = get_object_or_404(Blog, id=blog_id)
-            
-            # 2. Kiểm tra xem user này đã từng đánh giá bài viết này chưa
+
             if Rate.objects.filter(blog=blog, user=request.user).exists():
                 return JsonResponse({
-                    'status': 'already_rated', 
+                    'status': 'already_rated',
                     'message': 'Bạn đã đánh giá bài viết này rồi, không thể đánh giá lại!'
                 })
 
-            # 3. Nếu chưa thì thêm mới vào database
             Rate.objects.create(
                 blog=blog,
                 user=request.user,
                 rate=int(rate_val)
             )
-            return JsonResponse({'status': 'success', 'rate': rate_val})
 
-    return JsonResponse({'status': 'error', 'message': 'Yêu cầu không hợp lệ.'})
+            return JsonResponse({
+                'status': 'success',
+                'rate': rate_val
+            })
+
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Yêu cầu không hợp lệ.'
+    })
+
 
 def ajax_comment(request):
     if request.method == "POST":
-        # 1. Kiểm tra đăng nhập
         if not request.user.is_authenticated:
-            return JsonResponse({'status': 'error', 'message': 'vui long login để cmt'})
+            return JsonResponse({
+                'status': 'error',
+                'message': 'vui long login để cmt'
+            })
 
         blog_id = request.POST.get('blog_id')
         message = request.POST.get('message', '').strip()
         level = request.POST.get('level', 0)
 
         if not message:
-            return JsonResponse({'status': 'error', 'message': 'Vui lòng nhập nội dung!'})
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Vui lòng nhập nội dung!'
+            })
 
         try:
             blog = Blog.objects.get(id=blog_id)
             user = request.user
             name_user = user.username
-            
-            # Lấy avatar
+
             avatar_url = '/static/images/blog/man-two.jpg'
+
             if hasattr(user, 'profile') and user.profile.avatar:
                 avatar_url = user.profile.avatar.url
 
-            # 2. Lưu vào DB
             cmt_obj = Comment.objects.create(
                 user=user,
                 blog=blog,
@@ -125,7 +148,6 @@ def ajax_comment(request):
                 level=int(level) if level else 0
             )
 
-            # 3. Trả về thông tin để JS render ra đúng vị trí
             return JsonResponse({
                 'status': 'success',
                 'message': 'Bình luận thành công!',
@@ -139,16 +161,14 @@ def ajax_comment(request):
                     'date': date_format(cmt_obj.created_at, 'M d, Y'),
                 }
             })
+
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            })
 
-    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
-
-
-
-
-
-
-
-
-
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request'
+    }, status=400)

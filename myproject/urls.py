@@ -58,7 +58,6 @@ urlpatterns = [
     path('search/', user_views.search_product_view, name='search_product'),
     path('search-advanced/', user_views.search_advanced_view, name='search_advanced'),
 
-    path('shop/', user_views.shop_product_view, name='shop_product'),
     path('ajax/filter-price/', user_views.ajax_filter_price, name='ajax_filter_price'),
     
     path('forgot-password/', user_views.forgot_password, name='forgot_password'),
